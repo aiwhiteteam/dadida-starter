@@ -24,10 +24,16 @@ laptop or any host behind NAT.
    **Privileged Gateway Intents**, turn on **MESSAGE CONTENT INTENT**.
    > ⚠️ Without this, incoming message `content` arrives empty and the
    > classifier/responder have nothing to work with.
-3. **Invite the bot to your server.** Go to **OAuth2 → URL Generator** → check the
-   `bot` scope, then check the permissions below (they get encoded into the invite
-   URL, so set them *before* inviting). Open the generated URL in a browser and
-   authorize it for your server.
+3. **Invite the bot to your server.** Go to **OAuth2 → URL Generator**.
+   - Under **Scopes**, check **only `bot`** (ignore `identify`, `guilds`,
+     `applications.commands`, etc. — you don't need them).
+   - The moment you check `bot`, a **Bot Permissions** panel appears *below* the
+     scopes list. Scroll down to it and check the permissions in the table below.
+     (Scopes and Bot Permissions are two separate panels — the permissions checkboxes
+     won't show up until `bot` is checked.)
+   - These permissions get encoded into the invite URL, so set them *before* inviting.
+     Copy the generated URL at the bottom, open it in a browser, and authorize it for
+     your server.
 
    | Permission | Required? | Used for |
    |------------|-----------|----------|
