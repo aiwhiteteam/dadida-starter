@@ -99,6 +99,58 @@ deploy with an empty memory. To keep history across restarts, attach a volume:
    volume attached.
 4. Keep the service at **1 replica** (volumes can't attach to multi-replica services).
 
+## Backfill history
+
+By default the bot only records messages it receives **while running**. To load a
+channel's existing history into the store (so `recentMessages` and `search_history`
+can see it), run the backfill script:
+
+```bash
+npm run build
+npm run backfill -- <channelId> [--start <ISO>] [--end <ISO>] [--max <n>]
+```
+
+- `--start` / `--end` — only messages in this time range (ISO dates, e.g.
+  `2025-01-01` or `2025-01-01T00:00:00Z`). Default: from the beginning up to now.
+- `--max` — cap how many messages to scan (safety limit).
+- Uses `DISCORD_TOKEN` (same bot — needs **Read Message History** + the **Message
+  Content Intent**) and writes to the same `./data/messages.db`.
+
+It's **idempotent** (keyed on the Discord message id, so re-running never
+duplicates) and each message keeps its **original timestamp**, not the time of the
+backfill. Tip: overlap the window with when the bot went live — dedup handles the
+overlap, so you get no gaps and no duplicates.
+
+> You pass **ISO dates** for `--start` / `--end`; the script converts them to
+> Discord snowflakes internally, so you never compute snowflakes by hand.
+
+### Finding the channel ID (snowflake)
+
+The `<channelId>` is a Discord snowflake. To copy it:
+
+1. Discord → **Settings → Advanced → Developer Mode** (turn on).
+2. Right-click the channel in the sidebar → **Copy Channel ID**.
+
+(Same trick on a message → **Copy Message ID** if you ever need a specific
+message's snowflake; note its creation time is encoded in the id.)
+
+### Running the backfill on Railway
+
+Run it **inside the deployed service** so it writes to the mounted volume — running
+it on your laptop would write to your local `./data`, not the Railway volume.
+
+```bash
+npm i -g @railway/cli      # once
+railway login              # once
+railway link               # select your project + service
+railway ssh                # shell into the running container
+# now inside the container:
+npm run backfill -- <channelId> --start 2025-01-01
+```
+
+`dist/backfill.js` is already built during the Railway deploy, and `DISCORD_TOKEN`
+is already in the service environment, so the command above just works.
+
 ## Customize
 
 - **`personas/identity.md`** — who your persona is (name, role, vibe)
