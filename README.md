@@ -123,6 +123,26 @@ not a web app).
 > In containers the env vars are injected by the platform / `-e` flags, so no `.env`
 > file is needed — `npm start` uses `--env-file-if-exists` and simply skips it.
 
+### Persisting history
+
+The bot stores message history in a SQLite file at `./data/messages.db`, which
+powers conversation context and the `search_history` tool. On container hosts that
+directory is **ephemeral and wiped on every redeploy** — the bot still runs, it
+just starts each deploy with an empty memory. To keep history across restarts,
+mount a persistent volume at `/app/data`:
+
+- **Fly.io**: `fly volumes create data --size 1`, then add a `[[mounts]]` block to
+  `fly.toml` (`source = "data"`, `destination = "/app/data"`).
+- **Docker / VPS**: add `-v dadida-data:/app/data` to `docker run`.
+- **Railway** (same for Nixpacks or Docker builds — a volume is a runtime setting,
+  not a build one):
+  1. Open the project and select your bot service.
+  2. Right-click the service → **Attach Volume** (or **Settings → Volumes → Add Volume**).
+  3. Set the **mount path** to `/app/data` and create it — Railway redeploys with
+     the volume attached.
+  4. Keep the service at **1 replica** (volumes can't attach to multi-replica
+     services — which also matches the single-gateway-connection requirement).
+
 ## Customize
 
 - **`personas/identity.md`** — who your persona is (name, role, vibe)
