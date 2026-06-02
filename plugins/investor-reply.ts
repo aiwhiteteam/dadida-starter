@@ -1,5 +1,5 @@
-import { Agent, run } from '@openai/agents'
-import { definePlugin, loadPersona, loadKnowledge, createHistoryTool, type PolicyDecision, type Classification, type DadidaMessage, type DadidaContext } from 'dadida'
+import { Agent, run, webSearchTool } from '@openai/agents'
+import { definePlugin, loadPersona, loadKnowledge, createHistoryTool, SqliteMessageStore, type PolicyDecision, type Classification, type DadidaMessage, type DadidaContext } from 'dadida'
 
 const CONFIDENCE_THRESHOLD = parseFloat(process.env.CONFIDENCE_THRESHOLD || '0.75')
 
@@ -31,7 +31,11 @@ export function investorReply(): ReturnType<typeof definePlugin> {
     async action(decision: PolicyDecision, message: DadidaMessage, ctx: DadidaContext): Promise<void> {
       if (decision.action !== 'reply') return
 
-      const tools = ctx.store ? [createHistoryTool(ctx.store)] : []
+      const store = ctx.get<SqliteMessageStore>('store')
+      const tools = [
+        webSearchTool(),
+        ...(store ? [createHistoryTool(store)] : []),
+      ]
 
       const responderAgent = new Agent({
         name: 'investor-persona',

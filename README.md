@@ -47,7 +47,7 @@ laptop or any host behind NAT.
    > members it manages (Server Settings → Roles). Skip it if you only want chat replies.
 4. **(Optional) Get a channel ID.** In the Discord client, enable
    **Settings → Advanced → Developer Mode**, then right-click a channel → **Copy ID**
-   and put it in `GENERAL_CHANNEL_ID`. Leave it empty to listen to all channels.
+   and put it in `LISTEN_CHANNEL_IDS`. Leave it empty to listen to all channels.
 5. **Run it.** `npm run dev` — the bot is connected once it shows up online in your
    server.
 
@@ -94,7 +94,7 @@ not a web app).
    ```
 2. Set environment variables as Fly secrets:
    ```bash
-   fly secrets set DISCORD_TOKEN=xxx OPENAI_API_KEY=xxx GENERAL_CHANNEL_ID=xxx
+   fly secrets set DISCORD_TOKEN=xxx OPENAI_API_KEY=xxx LISTEN_CHANNEL_IDS=xxx
    ```
 3. Deploy:
    ```bash
@@ -116,7 +116,7 @@ not a web app).
    docker run -d --restart unless-stopped \
      -e DISCORD_TOKEN=xxx \
      -e OPENAI_API_KEY=xxx \
-     -e GENERAL_CHANNEL_ID=xxx \
+     -e LISTEN_CHANNEL_IDS=xxx \
      dadida-bot
    ```
 
