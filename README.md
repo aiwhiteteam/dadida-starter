@@ -64,20 +64,50 @@ npm run build
 npm start
 ```
 
-## Deploy to Railway
+## Deployment
+
+The bot runs as a **long-lived worker process** (it holds a Discord WebSocket /
+gateway connection). There is no HTTP server and no health-check endpoint — the
+platform just needs to keep one process alive. Run **exactly one instance**: a
+second instance would open a duplicate gateway connection and double-reply.
+
+### Railway
 
 1. Fork this repo
 2. Create a Railway project → connect your repo
-3. Set environment variables (see `.env.example`)
-4. Railway auto-detects `npm run build` + `npm start`
+3. Set environment variables (see `.env.example` — at minimum `DISCORD_TOKEN`
+   and `OPENAI_API_KEY`)
+4. Railway auto-detects the build + start commands:
+   - Build: `npm run build`
+   - Start: `npm start`
+5. Deploy — Railway runs it as a worker process and monitors process health
+   directly (no health check needed).
 
-## Deploy to Fly.io
+### Fly.io
+
+A `fly.toml` is included. It has no `[http_service]` block on purpose — this is a
+worker, not a web app.
 
 ```bash
-fly launch
+fly launch --no-deploy                      # creates/links the app
 fly secrets set DISCORD_TOKEN=xxx OPENAI_API_KEY=xxx GENERAL_CHANNEL_ID=xxx
 fly deploy
+fly scale count 1                           # one instance only
 ```
+
+### Any VPS / Docker host
+
+```bash
+docker build -t dadida-bot .
+docker run -d --restart unless-stopped \
+  -e DISCORD_TOKEN=xxx \
+  -e OPENAI_API_KEY=xxx \
+  -e GENERAL_CHANNEL_ID=xxx \
+  dadida-bot
+```
+
+> In containers the env vars are injected by the platform/`-e` flags, so no `.env`
+> file is needed — `npm start` uses `--env-file-if-exists` and simply skips it.
 
 ## Customize
 

@@ -1,0 +1,17 @@
+# Fly.io config for the dadida bot.
+# This is a long-lived worker (Discord gateway connection), not a web service —
+# so there is intentionally no [http_service] block and no health checks.
+# Run a single instance: `fly scale count 1`.
+
+app = "my-dadida-bot"
+primary_region = "sjc"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
