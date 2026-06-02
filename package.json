@@ -4,12 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch index.ts",
+    "dev": "tsx watch --env-file-if-exists=.env index.ts",
     "build": "tsup",
-    "start": "node dist/index.js"
+    "start": "node --env-file-if-exists=.env dist/index.js"
   },
   "dependencies": {
-    "dadida": "^0.1.0",
+    "dadida": "^0.2.0",
     "@openai/agents": "^0.11.0",
     "zod": "^4.0.0"
   },

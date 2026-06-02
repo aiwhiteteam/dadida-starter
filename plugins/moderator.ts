@@ -39,8 +39,9 @@ export function moderator(): ReturnType<typeof definePlugin> {
       return output
     },
 
-    async policy(classification: Classification, message: DadidaMessage): Promise<PolicyDecision> {
-      if (!classification.is_violation || classification.severity === 'none') {
+    async policy(classifications: Record<string, Classification>, message: DadidaMessage): Promise<PolicyDecision> {
+      const c = classifications['moderator'] ?? {}
+      if (!c.is_violation || c.severity === 'none') {
         return { shouldAct: false }
       }
 
@@ -48,7 +49,7 @@ export function moderator(): ReturnType<typeof definePlugin> {
       warningCounts.set(message.authorId, count)
 
       if (count >= MUTE_THRESHOLD) {
-        return { shouldAct: true, action: 'escalate', data: { count, severity: classification.severity, reason: classification.reason } }
+        return { shouldAct: true, action: 'escalate', data: { count, severity: c.severity, reason: c.reason } }
       }
       if (count >= WARN_THRESHOLD) {
         return { shouldAct: true, action: 'mute', data: { count, duration: MUTE_DURATION_SECONDS } }
@@ -65,12 +66,18 @@ export function moderator(): ReturnType<typeof definePlugin> {
       }
 
       if (decision.action === 'mute') {
+        try {
+          await ctx.platform.mute(message.channelId, message.authorId, MUTE_DURATION_SECONDS, 'Repeated violations')
+        } catch (error) {
+          ctx.logger.error('Mute failed, skipping announcement', { userId: message.authorId, error: String(error) })
+          return
+        }
+        ctx.logger.info('Muted user', { userId: message.authorId, duration: MUTE_DURATION_SECONDS })
+
         const result = await run(warningAgent, `A user just said: "${message.content}"\n\nThis is their ${decision.data?.count}th violation. Tell them they're being muted. Be firm but not hostile.`)
         if (result.finalOutput) {
           await ctx.platform.reply(message.channelId, message.id, result.finalOutput)
         }
-        await ctx.platform.mute(message.channelId, message.authorId, MUTE_DURATION_SECONDS, 'Repeated violations')
-        ctx.logger.info('Muted user', { userId: message.authorId, duration: MUTE_DURATION_SECONDS })
       }
 
       if (decision.action === 'escalate') {

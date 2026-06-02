@@ -13,9 +13,10 @@ const instructions = [
 export function investorReply(): ReturnType<typeof definePlugin> {
   return definePlugin({
     name: 'investor-reply',
-    async policy(classification: Classification): Promise<PolicyDecision> {
-      const isInvesting = classification.is_investing_related === true
-      const confidence = typeof classification.confidence === 'number' ? classification.confidence : 0
+    async policy(classifications: Record<string, Classification>): Promise<PolicyDecision> {
+      const c = classifications['investing-classifier'] ?? {}
+      const isInvesting = c.is_investing_related === true
+      const confidence = typeof c.confidence === 'number' ? c.confidence : 0
 
       if (!isInvesting || confidence < CONFIDENCE_THRESHOLD) {
         return { shouldAct: false }
@@ -43,7 +44,7 @@ export function investorReply(): ReturnType<typeof definePlugin> {
         .map((m) => `<${m.authorId}>: ${m.content}`)
         .join('\n')
 
-      const reason = ctx.classifications.reason ?? ''
+      const reason = (ctx.classifications['investing-classifier']?.reason as string) ?? ''
       const input = [
         recentContext ? `# Recent conversation\n${recentContext}` : '',
         `[Classification: ${reason}]`,
