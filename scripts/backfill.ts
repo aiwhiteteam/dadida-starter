@@ -38,7 +38,7 @@ if (!token) {
 }
 
 const startMs = flag('start') ? Date.parse(flag('start')!) : 0
-const endMs = flag('end') ? Date.parse(flag('end')!) : Date.now()
+const endMs = Math.min(flag('end') ? Date.parse(flag('end')!) : Date.now(), Date.now())
 const max = flag('max') ? parseInt(flag('max')!, 10) : Infinity
 
 if (Number.isNaN(startMs) || Number.isNaN(endMs)) {
