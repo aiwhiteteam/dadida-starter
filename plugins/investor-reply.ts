@@ -1,12 +1,12 @@
+import { readdirSync } from 'node:fs'
 import { Agent, run, webSearchTool } from '@openai/agents'
 import { definePlugin, loadPersona, loadKnowledge, createHistoryTool, SqliteMessageStore, type PolicyDecision, type Classification, type DadidaMessage, type DadidaContext } from 'dadida'
 
 const CONFIDENCE_THRESHOLD = parseFloat(process.env.CONFIDENCE_THRESHOLD || '0.75')
 
+const personaFiles = readdirSync('./personas/').filter((f) => f.endsWith('.md')).sort()
 const instructions = [
-  loadPersona('./personas/identity.md'),
-  loadPersona('./personas/soul.md'),
-  '# Knowledge Base',
+  ...personaFiles.map((f) => loadPersona(`./personas/${f}`)),
   loadKnowledge('./knowledge/'),
 ].join('\n\n')
 

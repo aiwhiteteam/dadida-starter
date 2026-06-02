@@ -23,13 +23,13 @@ const moderationSchema = z.object({
 
 const moderationAgent = new Agent({
   name: 'moderator',
-  instructions: loadPersona('./personas/moderator.md'),
+  instructions: loadPersona('./instructions/moderator.md'),
   outputType: moderationSchema,
 })
 
 const warningAgent = new Agent({
   name: 'moderator-voice',
-  instructions: loadPersona('./personas/moderator.md'),
+  instructions: loadPersona('./instructions/moderator.md'),
 })
 
 export function moderator(options: ModeratorOptions = {}): ReturnType<typeof definePlugin> {
