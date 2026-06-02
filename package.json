@@ -9,7 +9,7 @@
     "start": "node --env-file-if-exists=.env dist/index.js"
   },
   "dependencies": {
-    "dadida": "^0.2.0",
+    "dadida": "^0.2.1",
     "@openai/agents": "^0.11.0",
     "zod": "^4.0.0"
   },
