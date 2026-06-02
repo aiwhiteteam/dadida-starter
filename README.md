@@ -11,6 +11,29 @@ npm install
 cp .env.example .env   # fill in your tokens
 ```
 
+## Connect to Discord
+
+The bot connects over the Discord **Gateway (WebSocket)** — an outbound, long-lived
+connection. You don't need a public URL, webhook, or ngrok; it runs fine from your
+laptop or any host behind NAT.
+
+1. **Create the bot.** Go to the [Discord Developer Portal](https://discord.com/developers/applications)
+   → **New Application** → **Bot** (left sidebar) → **Reset Token**, then copy the
+   token into `DISCORD_TOKEN` in your `.env`.
+2. **Enable the Message Content Intent (required).** On the same Bot page, under
+   **Privileged Gateway Intents**, turn on **MESSAGE CONTENT INTENT**.
+   > ⚠️ Without this, incoming message `content` arrives empty and the
+   > classifier/responder have nothing to work with.
+3. **Invite the bot to your server.** Go to **OAuth2 → URL Generator** → check the
+   `bot` scope → under **Bot Permissions** check `Send Messages` and
+   `Read Message History` (add `Moderate Members` if you want warn/mute/kick) →
+   open the generated URL in a browser and authorize it for your server.
+4. **(Optional) Get a channel ID.** In the Discord client, enable
+   **Settings → Advanced → Developer Mode**, then right-click a channel → **Copy ID**
+   and put it in `GENERAL_CHANNEL_ID`. Leave it empty to listen to all channels.
+5. **Run it.** `npm run dev` — the bot is connected once it shows up online in your
+   server.
+
 ## Development
 
 ```bash
