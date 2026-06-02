@@ -25,9 +25,20 @@ laptop or any host behind NAT.
    > ⚠️ Without this, incoming message `content` arrives empty and the
    > classifier/responder have nothing to work with.
 3. **Invite the bot to your server.** Go to **OAuth2 → URL Generator** → check the
-   `bot` scope → under **Bot Permissions** check `Send Messages` and
-   `Read Message History` (add `Moderate Members` if you want warn/mute/kick) →
-   open the generated URL in a browser and authorize it for your server.
+   `bot` scope, then check the permissions below (they get encoded into the invite
+   URL, so set them *before* inviting). Open the generated URL in a browser and
+   authorize it for your server.
+
+   | Permission | Required? | Used for |
+   |------------|-----------|----------|
+   | `View Channels` | ✅ Yes | Receiving messages |
+   | `Send Messages` | ✅ Yes | Replies and escalation messages |
+   | `Read Message History` | ✅ Recommended | Conversation context / history tool |
+   | `Moderate Members` | 🟡 Only for moderation | Timing out (muting) users |
+
+   > `Moderate Members` is Discord's "timeout" permission, used by the moderator
+   > plugin's mute action. To mute, the bot's role must also sit **above** the
+   > members it manages (Server Settings → Roles). Skip it if you only want chat replies.
 4. **(Optional) Get a channel ID.** In the Discord client, enable
    **Settings → Advanced → Developer Mode**, then right-click a channel → **Copy ID**
    and put it in `GENERAL_CHANNEL_ID`. Leave it empty to listen to all channels.
