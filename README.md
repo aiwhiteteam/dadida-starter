@@ -71,77 +71,33 @@ gateway connection). There is no HTTP server and no health-check endpoint — th
 platform just needs to keep one process alive. Run **exactly one instance**: a
 second instance would open a duplicate gateway connection and double-reply.
 
-### Railway
+Deploy to **Railway**, which builds with Nixpacks (no Dockerfile needed):
 
 1. Fork this repo
 2. Create a Railway project → connect your repo
 3. Set environment variables (see `.env.example` — at minimum `DISCORD_TOKEN`
-   and `OPENAI_API_KEY`)
-4. Railway auto-detects the build + start commands:
+   and `OPENAI_API_KEY`). Env vars are injected by Railway, so no `.env` file is
+   needed — `npm start` uses `--env-file-if-exists` and skips it when absent.
+4. Railway auto-detects (Nixpacks) and runs:
    - Build: `npm run build`
    - Start: `npm start`
 5. Deploy — Railway runs it as a worker process and monitors process health
    directly (no health check needed).
-
-### Fly.io
-
-A `fly.toml` is included (no `[http_service]` block on purpose — this is a worker,
-not a web app).
-
-1. Create/link the app — this reads the bundled `fly.toml`:
-   ```bash
-   fly launch --no-deploy
-   ```
-2. Set environment variables as Fly secrets:
-   ```bash
-   fly secrets set DISCORD_TOKEN=xxx OPENAI_API_KEY=xxx LISTEN_CHANNEL_IDS=xxx
-   ```
-3. Deploy:
-   ```bash
-   fly deploy
-   ```
-4. Pin to a single instance (one gateway connection):
-   ```bash
-   fly scale count 1
-   ```
-
-### Any VPS / Docker host
-
-1. Build the image:
-   ```bash
-   docker build -t dadida-bot .
-   ```
-2. Run it as a restarting background container, passing env vars with `-e`:
-   ```bash
-   docker run -d --restart unless-stopped \
-     -e DISCORD_TOKEN=xxx \
-     -e OPENAI_API_KEY=xxx \
-     -e LISTEN_CHANNEL_IDS=xxx \
-     dadida-bot
-   ```
-
-> In containers the env vars are injected by the platform / `-e` flags, so no `.env`
-> file is needed — `npm start` uses `--env-file-if-exists` and simply skips it.
+6. Keep the service at **1 replica** (a second instance would duplicate the
+   gateway connection and double-reply).
 
 ### Persisting history
 
 The bot stores message history in a SQLite file at `./data/messages.db`, which
-powers conversation context and the `search_history` tool. On container hosts that
-directory is **ephemeral and wiped on every redeploy** — the bot still runs, it
-just starts each deploy with an empty memory. To keep history across restarts,
-mount a persistent volume at `/app/data`:
+powers conversation context and the `search_history` tool. Railway's filesystem is
+**ephemeral and wiped on every redeploy** — the bot still runs, it just starts each
+deploy with an empty memory. To keep history across restarts, attach a volume:
 
-- **Fly.io**: `fly volumes create data --size 1`, then add a `[[mounts]]` block to
-  `fly.toml` (`source = "data"`, `destination = "/app/data"`).
-- **Docker / VPS**: add `-v dadida-data:/app/data` to `docker run`.
-- **Railway** (same for Nixpacks or Docker builds — a volume is a runtime setting,
-  not a build one):
-  1. Open the project and select your bot service.
-  2. Right-click the service → **Attach Volume** (or **Settings → Volumes → Add Volume**).
-  3. Set the **mount path** to `/app/data` and create it — Railway redeploys with
-     the volume attached.
-  4. Keep the service at **1 replica** (volumes can't attach to multi-replica
-     services — which also matches the single-gateway-connection requirement).
+1. Open the project and select your bot service.
+2. Right-click the service → **Attach Volume** (or **Settings → Volumes → Add Volume**).
+3. Set the **mount path** to `/app/data` and create it — Railway redeploys with the
+   volume attached.
+4. Keep the service at **1 replica** (volumes can't attach to multi-replica services).
 
 ## Customize
 
@@ -165,6 +121,5 @@ mount a persistent volume at `/app/data`:
 ├── knowledge/
 │   ├── trading-rules.md
 │   └── current-views.md
-├── Dockerfile
 └── .env.example
 ```
