@@ -85,28 +85,42 @@ second instance would open a duplicate gateway connection and double-reply.
 
 ### Fly.io
 
-A `fly.toml` is included. It has no `[http_service]` block on purpose — this is a
-worker, not a web app.
+A `fly.toml` is included (no `[http_service]` block on purpose — this is a worker,
+not a web app).
 
-```bash
-fly launch --no-deploy                      # creates/links the app
-fly secrets set DISCORD_TOKEN=xxx OPENAI_API_KEY=xxx GENERAL_CHANNEL_ID=xxx
-fly deploy
-fly scale count 1                           # one instance only
-```
+1. Create/link the app — this reads the bundled `fly.toml`:
+   ```bash
+   fly launch --no-deploy
+   ```
+2. Set environment variables as Fly secrets:
+   ```bash
+   fly secrets set DISCORD_TOKEN=xxx OPENAI_API_KEY=xxx GENERAL_CHANNEL_ID=xxx
+   ```
+3. Deploy:
+   ```bash
+   fly deploy
+   ```
+4. Pin to a single instance (one gateway connection):
+   ```bash
+   fly scale count 1
+   ```
 
 ### Any VPS / Docker host
 
-```bash
-docker build -t dadida-bot .
-docker run -d --restart unless-stopped \
-  -e DISCORD_TOKEN=xxx \
-  -e OPENAI_API_KEY=xxx \
-  -e GENERAL_CHANNEL_ID=xxx \
-  dadida-bot
-```
+1. Build the image:
+   ```bash
+   docker build -t dadida-bot .
+   ```
+2. Run it as a restarting background container, passing env vars with `-e`:
+   ```bash
+   docker run -d --restart unless-stopped \
+     -e DISCORD_TOKEN=xxx \
+     -e OPENAI_API_KEY=xxx \
+     -e GENERAL_CHANNEL_ID=xxx \
+     dadida-bot
+   ```
 
-> In containers the env vars are injected by the platform/`-e` flags, so no `.env`
+> In containers the env vars are injected by the platform / `-e` flags, so no `.env`
 > file is needed — `npm start` uses `--env-file-if-exists` and simply skips it.
 
 ## Customize
