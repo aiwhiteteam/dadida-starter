@@ -1,4 +1,4 @@
-import { Agent, run } from '@openai/agents'
+import { Agent, run, tool } from '@openai/agents'
 import { z } from 'zod'
 import { definePlugin, loadPersona, type DadidaMessage, type DadidaContext, type Classification, type PolicyDecision } from 'dadida'
 
@@ -17,17 +17,19 @@ const moderationSchema = z.object({
   reason: z.string(),
 })
 
+const moderatorPersona = loadPersona('./instructions/moderator.md')
+
 const moderationAgent = new Agent({
   name: 'moderator',
   model: process.env.MODEL_ID,
-  instructions: loadPersona('./instructions/moderator.md'),
+  instructions: moderatorPersona,
   outputType: moderationSchema,
 })
 
 const warningAgent = new Agent({
   name: 'moderator-voice',
   model: process.env.MODEL_ID,
-  instructions: loadPersona('./instructions/moderator.md'),
+  instructions: moderatorPersona,
 })
 
 export function moderator(options: ModeratorOptions = {}): ReturnType<typeof definePlugin> {
@@ -81,15 +83,30 @@ export function moderator(options: ModeratorOptions = {}): ReturnType<typeof def
         ctx.logger.info('Muted user', { userId: message.authorId, duration })
 
         const durationLabel = duration >= 86400 ? `${Math.round(duration / 86400)} days` : `${Math.round(duration / 60)} minutes`
-        const result = await run(warningAgent, `A user just said: "${message.content}"\n\nThey are being muted for ${durationLabel}. Tell them briefly. Reason: ${decision.data?.reason}`)
-        if (result.finalOutput) {
-          await ctx.platform.reply(message.channelId, message.id, result.finalOutput)
-        }
 
-        try {
-          await ctx.platform.deleteMessage(message.channelId, message.id)
-        } catch (error) {
-          ctx.logger.warn('Failed to delete message', { messageId: message.id, error: String(error) })
+        const deleteMessageTool = tool({
+          name: 'delete_message',
+          description: 'Permanently remove the offending message from the channel.',
+          parameters: z.object({}),
+          execute: async () => {
+            await ctx.platform.deleteMessage(message.channelId, message.id)
+            return 'Message deleted.'
+          },
+        })
+
+        const muteResponseAgent = new Agent({
+          name: 'moderator-voice',
+          model: process.env.MODEL_ID,
+          instructions: moderatorPersona,
+          tools: [deleteMessageTool],
+        })
+
+        const result = await run(
+          muteResponseAgent,
+          `A user just said: "${message.content}"\n\nThey are being muted for ${durationLabel}. Reason: ${decision.data?.reason}\n\nWrite a brief in-character warning, then call delete_message to remove their message.`
+        )
+        if (result.finalOutput) {
+          await ctx.platform.sendMessage(message.channelId, result.finalOutput)
         }
 
         if (decision.action === 'mute_and_escalate') {
