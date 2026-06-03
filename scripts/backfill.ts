@@ -100,6 +100,7 @@ client.once('ready', async () => {
         id: msg.id,
         content: msg.content,
         authorId: msg.author.id,
+        authorName: msg.author.globalName ?? msg.author.username,
         authorIsBot: msg.author.bot,
         channelId: msg.channelId,
         platform: 'discord',

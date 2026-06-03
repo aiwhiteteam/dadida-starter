@@ -4,13 +4,9 @@ import { definePlugin, loadPersona, type DadidaMessage, type DadidaContext, type
 
 const MAX_MUTE_DURATION_SECONDS = 604800 // 7 days
 
-interface EscalateTarget {
-  channelId: string
-  mention?: string
-}
-
 interface ModeratorOptions {
-  escalateMap?: Record<string, EscalateTarget>
+  escalationChannelId?: string
+  mention?: string
   maxMuteDurationSeconds?: number
 }
 
@@ -23,12 +19,14 @@ const moderationSchema = z.object({
 
 const moderationAgent = new Agent({
   name: 'moderator',
+  model: process.env.MODEL_ID,
   instructions: loadPersona('./instructions/moderator.md'),
   outputType: moderationSchema,
 })
 
 const warningAgent = new Agent({
   name: 'moderator-voice',
+  model: process.env.MODEL_ID,
   instructions: loadPersona('./instructions/moderator.md'),
 })
 
@@ -89,10 +87,9 @@ export function moderator(options: ModeratorOptions = {}): ReturnType<typeof def
         }
 
         if (decision.action === 'mute_and_escalate') {
-          const target = options.escalateMap?.[message.channelId]
-          if (target) {
-            const escalateMsg = `${target.mention ? `${target.mention} ` : ''}⚠️ User <@${message.authorId}> needs review.\nReason: ${decision.data?.reason}\nMessage: "${message.content}"`
-            await ctx.platform.sendMessage(target.channelId, escalateMsg)
+          if (options.escalationChannelId) {
+            const escalateMsg = `${options.mention ? `${options.mention} ` : ''}⚠️ User <@${message.authorId}> needs review.\nReason: ${decision.data?.reason}\nMessage: "${message.content}"`
+            await ctx.platform.sendMessage(options.escalationChannelId, escalateMsg)
           }
           ctx.logger.info('Escalated to admins', { userId: message.authorId })
         }

@@ -39,13 +39,13 @@ export function investorReply(): ReturnType<typeof definePlugin> {
 
       const responderAgent = new Agent({
         name: 'investor-persona',
-        model: 'gpt-4.1-mini',
+        model: process.env.MODEL_ID,
         instructions,
         tools,
       })
 
       const recentContext = ctx.recentMessages
-        .map((m) => `<${m.authorId}>: ${m.content}`)
+        .map((m) => `${m.authorName} <${m.authorId}>: ${m.content}`)
         .join('\n')
 
       const reason = (ctx.classifications['investing-classifier']?.reason as string) ?? ''

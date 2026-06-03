@@ -10,6 +10,7 @@ const classificationSchema = z.object({
 
 const classifierAgent = new Agent({
   name: 'investing-classifier',
+  model: process.env.MODEL_ID,
   instructions: loadPersona('./instructions/classifier.md'),
   outputType: classificationSchema,
 })

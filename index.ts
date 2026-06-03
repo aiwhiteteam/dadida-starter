@@ -22,7 +22,8 @@ const bot = createBot({
   store: new SqliteMessageStore('./data/messages.db'),
   plugins: [
     moderator({
-      // escalateMap: { '<listen-channel-id>': { channelId: '<escalate-channel-id>', mention: '<@&role-id>' } },
+      escalationChannelId: process.env.ESCALATION_CHANNEL_ID,
+      mention: process.env.ESCALATION_MENTION,
       // maxMuteDurationSeconds: 604800,  // cap: 7 days
     }),
     investingClassifier(),
