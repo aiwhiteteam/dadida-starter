@@ -86,6 +86,12 @@ export function moderator(options: ModeratorOptions = {}): ReturnType<typeof def
           await ctx.platform.reply(message.channelId, message.id, result.finalOutput)
         }
 
+        try {
+          await ctx.platform.deleteMessage(message.channelId, message.id)
+        } catch (error) {
+          ctx.logger.warn('Failed to delete message', { messageId: message.id, error: String(error) })
+        }
+
         if (decision.action === 'mute_and_escalate') {
           if (options.escalationChannelId) {
             const escalateMsg = `${options.mention ? `${options.mention} ` : ''}⚠️ User <@${message.authorId}> needs review.\nReason: ${decision.data?.reason}\nMessage: "${message.content}"`
