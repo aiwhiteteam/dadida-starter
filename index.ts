@@ -1,5 +1,5 @@
 import { mkdirSync } from 'node:fs'
-import { createBot, discord, SqliteMessageStore } from 'dadida'
+import { createBot, definePlugin, discord, SqliteMessageStore } from 'dadida'
 import { investingClassifier } from './plugins/investing-classifier.js'
 import { investorReply } from './plugins/investor-reply.js'
 import { moderator } from './plugins/moderator.js'
@@ -11,16 +11,32 @@ const channelIds = process.env.LISTEN_CHANNEL_IDS
   .map((id) => id.trim())
   .filter(Boolean)
 
+// Channels that are stored in SQLite but skipped by all plugins (no replies, no moderation).
+const storeOnlyIds = new Set(
+  process.env.STORE_ONLY_CHANNEL_IDS?.split(',').map((id) => id.trim()).filter(Boolean) ?? []
+)
+
 // better-sqlite3 won't create the directory, so ensure it exists first.
 mkdirSync('./data', { recursive: true })
+
+// Merge store-only channels into the discord listen list when explicit channels are set.
+const allChannelIds = channelIds?.length
+  ? [...new Set([...channelIds, ...storeOnlyIds])]
+  : undefined
 
 const bot = createBot({
   platform: discord({
     token: process.env.DISCORD_TOKEN!,
-    channels: channelIds?.length ? channelIds : undefined,
+    channels: allChannelIds,
   }),
   store: new SqliteMessageStore('./data/messages.db'),
   plugins: [
+    definePlugin({
+      name: 'store-only-gate',
+      async filter(message) {
+        if (storeOnlyIds.has(message.channelId)) return false
+      },
+    }),
     moderator({
       escalationChannelId: process.env.ESCALATION_CHANNEL_ID,
       mention: process.env.ESCALATION_MENTION,
