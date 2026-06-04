@@ -134,6 +134,46 @@ The `<channelId>` is a Discord snowflake. To copy it:
 (Same trick on a message → **Copy Message ID** if you ever need a specific
 message's snowflake; note its creation time is encoded in the id.)
 
+## Mem0 semantic history
+
+Set `MEM0_API_KEY` in `.env` to enable a parallel Mem0 semantic memory layer:
+
+```bash
+MEM0_API_KEY=...
+```
+
+When enabled, new Discord messages are written to both SQLite and Mem0. The
+`search_history` tool then returns merged candidates from relaxed SQLite keyword
+search and Mem0 semantic search. SQLite remains the source of truth for raw
+message history.
+
+To backfill existing SQLite history into Mem0:
+
+```bash
+npm run build
+npm run mem0:backfill -- [--channel <channelId>] [--start <ISO>] [--end <ISO>] [--max <n>] [--batch <n>]
+```
+
+- `--channel` — only process SQLite rows from this Discord channel. By default,
+  all channels in `./data/messages.db` are processed.
+- `--start` / `--end` — only messages in this time range.
+- `--max` — cap how many SQLite rows to process.
+- `--batch` — SQLite page size, default 100.
+
+Mem0 backfill is idempotent at the script layer. Successful submissions are
+recorded in a local `mem0_sync` table inside `./data/messages.db`, scoped by the
+Mem0 base URL, app ID, agent ID, and Discord message ID. Re-running the same
+range skips rows that were already submitted to the same Mem0 target.
+Mem0's add API processes memories asynchronously, so the ledger records accepted
+submissions rather than waiting for final memory extraction completion.
+
+Optional Mem0 env vars:
+
+- `MEM0_APP_ID` — default `dadida-starter`.
+- `MEM0_AGENT_ID` — default `investor-persona`.
+- `MEM0_RERANK=false` — disable Mem0 reranking.
+- `MEM0_BASE_URL` — default `https://api.mem0.ai`.
+
 ### Running the backfill on Railway
 
 Run it **inside the deployed service** so it writes to the mounted volume — running

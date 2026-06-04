@@ -2,6 +2,7 @@ import { mkdirSync } from 'node:fs'
 import { createBot, discord, SqliteMessageStore } from 'dadida'
 import { investingClassifier } from './plugins/investing-classifier.js'
 import { investorReply } from './plugins/investor-reply.js'
+import { mem0Store } from './plugins/mem0-store.js'
 import { moderator } from './plugins/moderator.js'
 
 // Comma-separate LISTEN_CHANNEL_IDS to listen on multiple channels (e.g. "123,456").
@@ -21,6 +22,7 @@ const bot = createBot({
   }),
   store: new SqliteMessageStore('./data/messages.db'),
   plugins: [
+    mem0Store(),
     moderator({
       escalationChannelId: process.env.ESCALATION_CHANNEL_ID,
       mention: process.env.ESCALATION_MENTION,
